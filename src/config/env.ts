@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 export type RuntimeEnv = {
   TELEGRAM_BOT_TOKEN: string;
   ADMIN_TELEGRAM_IDS: Set<string>;
@@ -17,13 +19,22 @@ function required(name: string): string {
   return value;
 }
 
+function optional(name: string): string {
+  return process.env[name]?.trim() || "";
+}
+
+function deriveWebhookSecret(botToken: string): string {
+  return createHash("sha256").update(botToken).digest("hex");
+}
+
 export function getEnv(): RuntimeEnv {
+  const botToken = required("TELEGRAM_BOT_TOKEN");
   return {
-    TELEGRAM_BOT_TOKEN: required("TELEGRAM_BOT_TOKEN"),
+    TELEGRAM_BOT_TOKEN: botToken,
     ADMIN_TELEGRAM_IDS: parseAdminIds(required("ADMIN_TELEGRAM_IDS")),
     SUPABASE_URL: required("SUPABASE_URL").replace(/\/$/, ""),
     SUPABASE_SERVICE_ROLE_KEY: required("SUPABASE_SERVICE_ROLE_KEY"),
-    TELEGRAM_WEBHOOK_SECRET: required("TELEGRAM_WEBHOOK_SECRET"),
-    SETUP_SECRET: required("SETUP_SECRET"),
+    TELEGRAM_WEBHOOK_SECRET: optional("TELEGRAM_WEBHOOK_SECRET") || deriveWebhookSecret(botToken),
+    SETUP_SECRET: optional("SETUP_SECRET"),
   };
 }

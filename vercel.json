@@ -2,8 +2,8 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
     "api/**/*.ts": {
-      "maxDuration": 10
+      "maxDuration": 10,
+      "includeFiles": "src/**"
     }
-  },
-  "bunVersion": "1.x"
+  }
 }

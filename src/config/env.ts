@@ -7,6 +7,7 @@ export type RuntimeEnv = {
   SUPABASE_SERVICE_ROLE_KEY: string;
   TELEGRAM_WEBHOOK_SECRET: string;
   SETUP_SECRET: string;
+  WEB_APP_URL: string;
 };
 
 export function parseAdminIds(value: string): Set<string> {
@@ -36,5 +37,6 @@ export function getEnv(): RuntimeEnv {
     SUPABASE_SERVICE_ROLE_KEY: required("SUPABASE_SERVICE_ROLE_KEY"),
     TELEGRAM_WEBHOOK_SECRET: optional("TELEGRAM_WEBHOOK_SECRET") || deriveWebhookSecret(botToken),
     SETUP_SECRET: optional("SETUP_SECRET"),
+    WEB_APP_URL: optional("WEB_APP_URL").replace(/\/$/, ""),
   };
 }

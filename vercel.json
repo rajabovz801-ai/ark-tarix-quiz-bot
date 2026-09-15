@@ -4,5 +4,6 @@
     "api/**/*.ts": {
       "maxDuration": 10
     }
-  }
+  },
+  "bunVersion": "1.x"
 }

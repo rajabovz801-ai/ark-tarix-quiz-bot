@@ -64,3 +64,7 @@ export function setWebhook(url: string, secretToken: string) {
     drop_pending_updates: true,
   });
 }
+
+export function setChatMenuButton(menuButton: Record<string, unknown>) {
+  return telegram("setChatMenuButton", { menu_button: menuButton });
+}

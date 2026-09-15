@@ -1,16 +1,18 @@
 import { dbInsert, dbSelect, dbUpdate } from "../lib/supabase.ts";
 import { parseQuizText } from "./parser.ts";
+import { assertAllowedQuizTime, getSettings } from "./settings-service.ts";
 
 export async function createQuizFromText(input: string, adminId: number) {
   const parsed = parseQuizText(input);
+  const settings = await getSettings();
   const quizRows = await dbInsert<any>("history_quizzes", {
     title: parsed.title,
     created_by: adminId,
     status: "draft",
     question_count: parsed.questions.length,
-    default_time_limit: 20,
-    shuffle_questions: false,
-    shuffle_options: false,
+    default_time_limit: settings.defaultTimeLimit,
+    shuffle_questions: settings.shuffleQuestions,
+    shuffle_options: settings.shuffleOptions,
   });
   const quiz = quizRows[0];
   const questionRows = parsed.questions.map((question, index) => ({
@@ -36,7 +38,7 @@ export async function getQuizQuestions(quizId: number) {
 }
 
 export async function updateQuizTime(quizId: number, seconds: number) {
-  if (![10, 15, 20, 30, 45, 60].includes(seconds)) throw new Error("Unsupported quiz time");
+  assertAllowedQuizTime(seconds);
   const rows = await dbUpdate<any>("history_quizzes", { id: `eq.${quizId}` }, { default_time_limit: seconds, updated_at: new Date().toISOString() });
   return rows[0];
 }
@@ -47,4 +49,8 @@ export async function archiveQuiz(quizId: number) {
 
 export async function listRecentQuizzes(adminId: number) {
   return dbSelect<any>("history_quizzes", { created_by: `eq.${adminId}`, status: "neq.archived", order: "created_at.desc", limit: "10" });
+}
+
+export async function listManageQuizzes(limit = 20) {
+  return dbSelect<any>("history_quizzes", { status: "neq.archived", order: "created_at.desc", limit: String(Math.max(1, Math.min(limit, 30))) });
 }

@@ -5,6 +5,7 @@ import { getQuiz, getQuizQuestions } from "./quiz-service.ts";
 import { calculateScore } from "./scoring.ts";
 import { rankPlayers } from "./statistics.ts";
 import type { OptionKey, TelegramUser } from "./types.ts";
+import { formatCompletedQuizMessage } from "./ui.ts";
 
 function shuffled<T>(input: T[]): T[] {
   const out = [...input];
@@ -187,8 +188,12 @@ export async function finishSession(sessionId: number) {
   const group = await getGroup(session.group_id);
   const quiz = await getQuiz(session.quiz_id);
   if (group) {
-    const top = ranked.slice(0, 10).map((r) => `${r.rank}. ${escapeHtml(r.displayName)} — <b>${r.score}</b> ball`).join("\n");
-    await sendMessage(group.telegram_chat_id, `🏆 <b>${escapeHtml(quiz?.title || "Tarix Quiz")} yakunlandi!</b>\n\n${top || "Hali hech kim javob bermadi."}\n\nJami qatnashchi: ${ranked.length}`, { parse_mode: "HTML" });
+    await sendMessage(group.telegram_chat_id, formatCompletedQuizMessage({
+      quizTitle: quiz?.title || "Tarix Quiz",
+      groupTitle: group.title || "Guruh",
+      participantCount: ranked.length,
+      ranked: ranked.map((row) => ({ rank: row.rank, displayName: row.displayName, score: row.score })),
+    }), { parse_mode: "HTML" });
   }
   if (session.started_by) {
     const answers = await dbSelect<any>("history_answers", { session_id: `eq.${sessionId}` });

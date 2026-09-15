@@ -42,7 +42,6 @@ export function sendQuizPoll(params: {
   correctIndex: number;
   openPeriod: number;
   explanation?: string | null;
-  shuffleOptions?: boolean;
 }) {
   return telegram<any>("sendPoll", {
     chat_id: params.chatId,
@@ -51,10 +50,8 @@ export function sendQuizPoll(params: {
     is_anonymous: false,
     type: "quiz",
     allows_multiple_answers: false,
-    allows_revoting: false,
-    correct_option_ids: [params.correctIndex],
+    correct_option_id: params.correctIndex,
     open_period: params.openPeriod,
-    shuffle_options: Boolean(params.shuffleOptions),
     ...(params.explanation ? { explanation: params.explanation.slice(0, 200) } : {}),
   });
 }

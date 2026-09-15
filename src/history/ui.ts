@@ -12,26 +12,18 @@ export function escapeHtml(input: string): string {
 export function welcomeText(firstName?: string | null): string {
   const name = escapeHtml(firstName?.trim() || "do‘st");
   return [
-    "🏛 <b>ARK TARIX QUIZ BOT</b>",
+    "🏛 <b>ARK TARIX QUIZ</b>",
     "",
     `👋 Xush kelibsiz, <b>${name}</b>!`,
     "",
-    "📚 Bu bot orqali tarix fanidan interaktiv quizlar guruhlarda o‘tkaziladi.",
-    "⚡ Tezkor savollar  •  🏆 Reyting  •  📊 Natijalar",
+    "Tarix bo‘yicha testlar, natijalar va reytingni ilova ichida ko‘rishingiz mumkin.",
     "",
-    "Quyidagi menyudan kerakli bo‘limni tanlang 👇",
+    "Pastdagi <b>🚀 Ilovani ochish</b> tugmasi orqali ilovaga kiring 👇",
   ].join("\n");
 }
 
-export function welcomeMenu(isAdmin: boolean): InlineMarkup {
-  const rows: InlineButton[][] = [
-    [
-      { text: "📚 Quizlar", callback_data: "public:quizzes" },
-      { text: "ℹ️ Bot haqida", callback_data: "public:about" },
-    ],
-  ];
-  if (isAdmin) rows.push([{ text: "⚙️ Admin panel", callback_data: "panel:home" }]);
-  return inlineKeyboard(rows);
+export function welcomeMenu(_isAdmin: boolean): Record<string, never> {
+  return {};
 }
 
 export function adminPanelMenu(isSuperAdmin: boolean): InlineMarkup {

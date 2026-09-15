@@ -55,15 +55,24 @@ export async function openQuestion(sessionId: number) {
   const seconds = question.time_limit_seconds || session.default_time_limit || 20;
   const openedAt = new Date();
   const deadline = new Date(openedAt.getTime() + seconds * 1000);
-  const correctIndex = ["A", "B", "C", "D"].indexOf(question.correct_option);
+
+  const baseOptions: Array<{ key: OptionKey; text: string }> = [
+    { key: "A", text: question.option_a },
+    { key: "B", text: question.option_b },
+    { key: "C", text: question.option_c },
+    { key: "D", text: question.option_d },
+  ];
+  const displayed = quiz.shuffle_options ? shuffled(baseOptions) : baseOptions;
+  const correctIndex = displayed.findIndex((item) => item.key === question.correct_option);
+  const optionOrder = displayed.map((item) => item.key);
+
   const result = await sendQuizPoll({
     chatId: group.telegram_chat_id,
     question: `${index + 1}/${order.length}. ${question.question_text}`,
-    options: [question.option_a, question.option_b, question.option_c, question.option_d],
+    options: displayed.map((item) => item.text),
     correctIndex,
     openPeriod: seconds,
     explanation: question.explanation,
-    shuffleOptions: Boolean(quiz.shuffle_options),
   });
   await dbUpdate("history_sessions", { id: `eq.${sessionId}`, status: "eq.running" }, {
     current_question_id: questionId,
@@ -71,6 +80,7 @@ export async function openQuestion(sessionId: number) {
     current_message_id: result.message_id,
     current_question_opened_at: openedAt.toISOString(),
     current_question_deadline_at: deadline.toISOString(),
+    current_option_order: optionOrder,
   });
 }
 
@@ -82,7 +92,10 @@ export async function submitPollAnswer(pollId: string, user: TelegramUser, optio
   if (now > deadline + 1500) return { accepted: false, reason: "late" };
   const question = (await dbSelect<any>("history_questions", { id: `eq.${session.current_question_id}`, limit: "1" }))[0];
   if (!question) return { accepted: false, reason: "missing-question" };
-  const option = ["A", "B", "C", "D"][optionIds[0]] as OptionKey | undefined;
+  const optionOrder: OptionKey[] = Array.isArray(session.current_option_order) && session.current_option_order.length === 4
+    ? session.current_option_order
+    : ["A", "B", "C", "D"];
+  const option = optionOrder[optionIds[0]];
   if (!option) return { accepted: false, reason: "invalid-option" };
   const displayName = [user.first_name, user.last_name].filter(Boolean).join(" ").trim() || user.username || String(user.id);
   const player = (await dbUpsert<any>("history_players", {
@@ -129,6 +142,7 @@ export async function handlePollClosed(pollId: string) {
     current_poll_id: null,
     current_message_id: null,
     current_question_id: null,
+    current_option_order: ["A", "B", "C", "D"],
   });
   if (!updated.length) return;
   if (nextIndex >= order.length) {

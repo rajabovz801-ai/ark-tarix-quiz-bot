@@ -27,18 +27,13 @@ test("settings normalize defaults and only allow supported quiz times", async ()
   assert.throws(() => assertAllowedQuizTime(25), /Unsupported quiz time/);
 });
 
-test("welcome menu is role aware and does not expose student results", async () => {
+test("public welcome is simple while admin panel remains available through admin flow", async () => {
   const { welcomeText, welcomeMenu, adminPanelMenu } = await import("../src/history/ui.ts");
-  assert.match(welcomeText("Zuhriddin"), /Xush kelibsiz, <b>Zuhriddin<\/b>/);
-
-  const student = JSON.stringify(welcomeMenu(false));
-  assert.match(student, /📚 Quizlar/);
-  assert.match(student, /ℹ️ Bot haqida/);
-  assert.doesNotMatch(student, /Natijalar/);
-  assert.doesNotMatch(student, /Admin panel/);
-
-  const admin = JSON.stringify(welcomeMenu(true));
-  assert.match(admin, /⚙️ Admin panel/);
+  const welcome = welcomeText("Zuhriddin");
+  assert.match(welcome, /Xush kelibsiz, <b>Zuhriddin<\/b>/);
+  assert.match(welcome, /ilova/i);
+  assert.deepEqual(welcomeMenu(false), {});
+  assert.deepEqual(welcomeMenu(true), {});
 
   const panel = JSON.stringify(adminPanelMenu(true));
   for (const label of ["➕ Test qo‘shish", "📚 Testlar", "👥 Guruhlar", "🏆 Natijalar", "📊 Statistika", "👑 Adminlar", "⚙️ Sozlamalar", "🏠 Bosh menyu"]) {

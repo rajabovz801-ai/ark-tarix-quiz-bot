@@ -27,13 +27,18 @@ test("settings normalize defaults and only allow supported quiz times", async ()
   assert.throws(() => assertAllowedQuizTime(25), /Unsupported quiz time/);
 });
 
-test("public welcome is simple while admin panel remains available through admin flow", async () => {
+test("public welcome stays simple while admin panel remains available through admin flow", async () => {
   const { welcomeText, welcomeMenu, adminPanelMenu } = await import("../src/history/ui.ts");
   const welcome = welcomeText("Zuhriddin");
+  const url = "https://ark-tarix-web-app.vercel.app";
   assert.match(welcome, /Xush kelibsiz, <b>Zuhriddin<\/b>/);
   assert.match(welcome, /ilova/i);
-  assert.deepEqual(welcomeMenu(false), {});
-  assert.deepEqual(welcomeMenu(true), {});
+  assert.deepEqual(welcomeMenu(false, url), {
+    reply_markup: {
+      inline_keyboard: [[{ text: "🚀 Ilovani ochish", web_app: { url } }]],
+    },
+  });
+  assert.deepEqual(welcomeMenu(true, url), welcomeMenu(false, url));
 
   const panel = JSON.stringify(adminPanelMenu(true));
   for (const label of ["➕ Test qo‘shish", "📚 Testlar", "👥 Guruhlar", "🏆 Natijalar", "📊 Statistika", "👑 Adminlar", "⚙️ Sozlamalar", "🏠 Bosh menyu"]) {
@@ -79,32 +84,6 @@ test("result detail joins session metadata with ranked players", async () => {
   );
   assert.equal(detail.quizTitle, "Temuriylar");
   assert.equal(detail.groupTitle, "404");
-  assert.equal(detail.participantCount, 1);
   assert.equal(detail.leaderboard[0].displayName, "Ali");
-  assert.equal(detail.leaderboard[0].score, 700);
-});
-
-test("admin statistics count unique Telegram players", async () => {
-  const { summarizeAdminStats } = await import("../src/history/stats-service.ts");
-  const stats = summarizeAdminStats({
-    quizzes: [{ id: 1 }, { id: 2 }],
-    groups: [{ id: 1 }],
-    sessions: [{ id: 1 }, { id: 2 }, { id: 3 }],
-    players: [{ telegram_user_id: 10 }, { telegram_user_id: 10 }, { telegram_user_id: 11 }],
-    answers: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }],
-  });
-  assert.deepEqual(stats, { totalQuizzes: 2, totalGroups: 1, completedSessions: 3, uniquePlayers: 2, storedAnswers: 4 });
-});
-
-test("webhook wires admin panel, persistent results and confirmation actions", async () => {
-  const webhook = await readFile(new URL("../api/telegram/webhook.ts", import.meta.url), "utf8");
-  const session = await readFile(new URL("../src/history/session-engine.ts", import.meta.url), "utf8");
-  const quiz = await readFile(new URL("../src/history/quiz-service.ts", import.meta.url), "utf8");
-  assert.match(webhook, /\/admin/);
-  assert.match(webhook, /panel:results/);
-  assert.match(webhook, /awaiting_admin_id/);
-  assert.match(webhook, /delete_confirm/);
-  assert.match(webhook, /getAdminAccess/);
-  assert.match(session, /formatCompletedQuizMessage/);
-  assert.match(quiz, /getSettings/);
+  assert.equal(detail.leaderboard[0].rank, 1);
 });

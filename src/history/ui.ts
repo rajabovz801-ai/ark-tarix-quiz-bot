@@ -1,4 +1,9 @@
-export type InlineButton = { text: string; callback_data: string };
+import { getEnv } from "../config/env.ts";
+import { buildWebAppMenuButton } from "./web-app-menu.ts";
+
+export type InlineButton =
+  | { text: string; callback_data: string }
+  | { text: string; web_app: { url: string } };
 export type InlineMarkup = { reply_markup: { inline_keyboard: InlineButton[][] } };
 
 export function inlineKeyboard(rows: InlineButton[][]): InlineMarkup {
@@ -22,8 +27,11 @@ export function welcomeText(firstName?: string | null): string {
   ].join("\n");
 }
 
-export function welcomeMenu(_isAdmin: boolean): Record<string, never> {
-  return {};
+export function welcomeMenu(_isAdmin: boolean, webAppUrl?: string): InlineMarkup {
+  const button = buildWebAppMenuButton(webAppUrl || getEnv().WEB_APP_URL);
+  return inlineKeyboard([[
+    { text: button.text, web_app: button.web_app },
+  ]]);
 }
 
 export function adminPanelMenu(isSuperAdmin: boolean): InlineMarkup {

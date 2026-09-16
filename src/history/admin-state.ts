@@ -1,6 +1,14 @@
 import { dbSelect, dbUpsert } from "../lib/supabase.ts";
 
-export type AdminState = "idle" | "awaiting_quiz" | "preview" | "choosing_group" | "choosing_time" | "awaiting_admin_id";
+export type AdminState =
+  | "idle"
+  | "awaiting_quiz"
+  | "preview"
+  | "choosing_group"
+  | "choosing_time"
+  | "awaiting_admin_id"
+  | "awaiting_first_name"
+  | "awaiting_last_name";
 
 export async function getAdminState(telegramUserId: number): Promise<{ state: AdminState; payload: Record<string, unknown> }> {
   const rows = await dbSelect<any>("history_bot_state", { telegram_user_id: `eq.${telegramUserId}`, limit: "1" });

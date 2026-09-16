@@ -14,6 +14,39 @@ export function escapeHtml(input: string): string {
   return String(input).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+export function registrationFirstNameText(): string {
+  return [
+    "🏛 <b>ARK TARIX</b>",
+    "",
+    "Xush kelibsiz! Ilovaga kirishdan oldin qisqa ro‘yxatdan o‘tamiz.",
+    "",
+    "<b>Ismingizni yozing:</b>",
+    "Masalan: <code>Zuhriddin</code>",
+  ].join("\n");
+}
+
+export function registrationLastNameText(firstName: string): string {
+  return [
+    "✅ Ism qabul qilindi.",
+    "",
+    `Ism: <b>${escapeHtml(firstName)}</b>`,
+    "",
+    "Endi <b>familiyangizni yozing:</b>",
+    "Masalan: <code>Rajabov</code>",
+  ].join("\n");
+}
+
+export function registrationCompleteText(firstName: string, lastName: string): string {
+  return [
+    "✅ <b>RO‘YXATDAN O‘TISH YAKUNLANDI</b>",
+    "",
+    `👤 ${escapeHtml(firstName)} ${escapeHtml(lastName)}`,
+    "",
+    "ARK Tarix platformasiga xush kelibsiz.",
+    "Pastdagi <b>🚀 Ilovani ochish</b> tugmasi orqali kiring.",
+  ].join("\n");
+}
+
 export function welcomeText(firstName?: string | null): string {
   const name = escapeHtml(firstName?.trim() || "do‘st");
   return [

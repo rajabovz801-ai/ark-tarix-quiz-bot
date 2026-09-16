@@ -12,14 +12,14 @@ test("Telegram Web App menu button uses the configured HTTPS app URL", async () 
   assert.throws(() => buildWebAppMenuButton("http://localhost:3000"), /HTTPS/);
 });
 
-test("runtime env exposes an optional WEB_APP_URL without breaking the existing bot", async () => {
+test("runtime env defaults WEB_APP_URL to the deployed ARK Tarix app", async () => {
   process.env.TELEGRAM_BOT_TOKEN = "123:abc";
   process.env.ADMIN_TELEGRAM_IDS = "1";
   process.env.SUPABASE_URL = "https://example.supabase.co";
   process.env.SUPABASE_SERVICE_ROLE_KEY = "secret";
-  process.env.WEB_APP_URL = "https://tarix-app.vercel.app/";
+  delete process.env.WEB_APP_URL;
   const { getEnv } = await import("../src/config/env.ts");
-  assert.equal(getEnv().WEB_APP_URL, "https://tarix-app.vercel.app");
+  assert.equal(getEnv().WEB_APP_URL, "https://ark-tarix-web-app.vercel.app");
 });
 
 test("Telegram setup configures the persistent web-app menu button and preserves webhook setup", async () => {
@@ -27,4 +27,11 @@ test("Telegram setup configures the persistent web-app menu button and preserves
   assert.match(setup, /setWebhook/);
   assert.match(setup, /setChatMenuButton/);
   assert.match(setup, /WEB_APP_URL/);
+});
+
+test("private /start configures a chat-specific Web App menu button", async () => {
+  const webhook = await readFile(new URL("../api/telegram/webhook.ts", import.meta.url), "utf8");
+  assert.match(webhook, /setChatMenuButton/);
+  assert.match(webhook, /buildWebAppMenuButton/);
+  assert.match(webhook, /WEB_APP_URL/);
 });

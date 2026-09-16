@@ -29,9 +29,10 @@ test("Telegram setup configures the persistent web-app menu button and preserves
   assert.match(setup, /WEB_APP_URL/);
 });
 
-test("private /start configures a chat-specific Web App menu button", async () => {
-  const webhook = await readFile(new URL("../api/telegram/webhook.ts", import.meta.url), "utf8");
-  assert.match(webhook, /setChatMenuButton/);
-  assert.match(webhook, /buildWebAppMenuButton/);
-  assert.match(webhook, /WEB_APP_URL/);
+test("bot messages automatically ensure the global Web App menu button is configured", async () => {
+  const telegramSource = await readFile(new URL("../src/lib/telegram.ts", import.meta.url), "utf8");
+  assert.match(telegramSource, /ensureDefaultWebAppMenu/);
+  assert.match(telegramSource, /setChatMenuButton/);
+  assert.match(telegramSource, /buildWebAppMenuButton/);
+  assert.match(telegramSource, /WEB_APP_URL/);
 });

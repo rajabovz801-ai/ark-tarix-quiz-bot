@@ -22,7 +22,7 @@ export function normalizeRegistrationName(input: string): string {
     throw new Error("Faqat harflar, bo‘sh joy, apostrof va chiziqcha ishlating.");
   }
   const lower = compact.toLocaleLowerCase("uz-UZ");
-  return lower.replace(/(^|[\s'’ʻ‘-])(\p{L})/gu, (_, prefix: string, letter: string) => `${prefix}${letter.toLocaleUpperCase("uz-UZ")}`);
+  return lower.replace(/(^|[\s-])(\p{L})/gu, (_, prefix: string, letter: string) => `${prefix}${letter.toLocaleUpperCase("uz-UZ")}`);
 }
 
 export async function getHistoryUser(telegramUserId: number): Promise<HistoryUser | null> {

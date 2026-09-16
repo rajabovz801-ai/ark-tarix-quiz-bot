@@ -27,3 +27,12 @@ test("registration names are normalized and validated", async () => {
   assert.throws(() => normalizeRegistrationName("A"), /kamida 2/i);
   assert.throws(() => normalizeRegistrationName("12345"), /harf/i);
 });
+
+test("private start uses history user registration before app access", async () => {
+  const source = await readFile(new URL("../api/telegram/webhook.ts", import.meta.url), "utf8");
+  assert.match(source, /getHistoryUser/);
+  assert.match(source, /awaiting_first_name/);
+  assert.match(source, /awaiting_last_name/);
+  assert.match(source, /upsertHistoryUser/);
+  assert.match(source, /registrationCompleteText/);
+});

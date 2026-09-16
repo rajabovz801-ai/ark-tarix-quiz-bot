@@ -37,6 +37,6 @@ export function getEnv(): RuntimeEnv {
     SUPABASE_SERVICE_ROLE_KEY: required("SUPABASE_SERVICE_ROLE_KEY"),
     TELEGRAM_WEBHOOK_SECRET: optional("TELEGRAM_WEBHOOK_SECRET") || deriveWebhookSecret(botToken),
     SETUP_SECRET: optional("SETUP_SECRET"),
-    WEB_APP_URL: optional("WEB_APP_URL").replace(/\/$/, ""),
+    WEB_APP_URL: (optional("WEB_APP_URL") || "https://ark-tarix-web-app.vercel.app").replace(/\/$/, ""),
   };
 }

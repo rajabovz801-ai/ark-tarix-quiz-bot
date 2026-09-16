@@ -3,7 +3,7 @@
   "functions": {
     "api/**/*.ts": {
       "maxDuration": 10,
-      "includeFiles": "src/**"
+      "includeFiles": "{src/**,api/telegram/legacy-webhook.ts}"
     }
   }
 }

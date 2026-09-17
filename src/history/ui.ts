@@ -38,6 +38,24 @@ export function registrationLastNameText(firstName: string): string {
   ].join("\n");
 }
 
+export function registrationConfirmationText(firstName: string, lastName: string): string {
+  return [
+    "👤 <b>Ma’lumotlaringizni tekshiring</b>",
+    "",
+    `Ism: <b>${escapeHtml(firstName)}</b>`,
+    `Familiya: <b>${escapeHtml(lastName)}</b>`,
+    "",
+    "Ma’lumotlar to‘g‘rimi?",
+  ].join("\n");
+}
+
+export function registrationConfirmationMenu(): InlineMarkup {
+  return inlineKeyboard([[
+    { text: "✅ Tasdiqlash", callback_data: "registration:confirm" },
+    { text: "✏️ Tahrirlash", callback_data: "registration:edit" },
+  ]]);
+}
+
 export function registrationCompleteText(firstName: string, lastName: string): string {
   return [
     "✅ <b>Ro‘yxatdan o‘tish muvaffaqiyatli yakunlandi</b>",

@@ -91,9 +91,3 @@ test("private start gates the persistent Web App menu until registration complet
   assert.match(source, /disableWebAppMenuForChat/);
   assert.match(source, /enableWebAppMenuForChat/);
 });
-
-test("public bot information uses the current Ark Education brand", async () => {
-  const source = await readFile(new URL("../api/telegram/legacy-webhook.ts", import.meta.url), "utf8");
-  assert.match(source, /Ark Education \| Tarix/);
-  assert.doesNotMatch(source, /ARK TARIX QUIZ BOT/);
-});

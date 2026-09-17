@@ -11,15 +11,27 @@ test("registration migration creates users and registration states", async () =>
   assert.match(sql, /enable row level security/i);
 });
 
-test("registration copy uses Rustam and Usmonov as the examples", async () => {
-  const { registrationFirstNameText, registrationLastNameText, registrationCompleteText } = await import("../src/history/ui.ts");
+test("registration copy uses the polished Ark Education wording and Rustam/Usmonov examples", async () => {
+  const { registrationFirstNameText, registrationLastNameText, registrationCompleteText, welcomeText } = await import("../src/history/ui.ts");
+  assert.match(registrationFirstNameText(), /Ark Education \| Tarix/);
+  assert.match(registrationFirstNameText(), /Ark Education’ning Tarix platformasiga xush kelibsiz!/);
+  assert.match(registrationFirstNameText(), /Platformadan foydalanish uchun avval qisqa ro‘yxatdan o‘ting/);
   assert.match(registrationFirstNameText(), /<code>Rustam<\/code>/);
   assert.doesNotMatch(registrationFirstNameText(), /Zuhriddin/);
+
+  assert.match(registrationLastNameText("Rustam"), /Ismingiz qabul qilindi/);
   assert.match(registrationLastNameText("Rustam"), /familiya/i);
   assert.match(registrationLastNameText("Rustam"), /<code>Usmonov<\/code>/);
   assert.doesNotMatch(registrationLastNameText("Rustam"), /Rajabov/);
+
   assert.match(registrationCompleteText("Rustam", "Usmonov"), /Rustam Usmonov/);
-  assert.match(registrationCompleteText("Rustam", "Usmonov"), /Ilovani ochish/i);
+  assert.match(registrationCompleteText("Rustam", "Usmonov"), /Ro‘yxatdan o‘tish muvaffaqiyatli yakunlandi/);
+  assert.match(registrationCompleteText("Rustam", "Usmonov"), /Ark Education’ning Tarix platformasiga xush kelibsiz!/);
+  assert.match(registrationCompleteText("Rustam", "Usmonov"), /Platformaga kirish/);
+  assert.doesNotMatch(registrationCompleteText("Rustam", "Usmonov"), /Ilovani ochish/);
+
+  assert.match(welcomeText("Rustam"), /Ark Education \| Tarix/);
+  assert.match(welcomeText("Rustam"), /Platformaga kirish/);
 });
 
 test("registration names are normalized and validated", async () => {

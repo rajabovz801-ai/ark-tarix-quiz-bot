@@ -22,17 +22,17 @@ test("runtime env defaults WEB_APP_URL to the deployed ARK Tarix app", async () 
   assert.equal(getEnv().WEB_APP_URL, "https://ark-tarix-web-app.vercel.app");
 });
 
-test("Telegram setup configures the persistent web-app menu button and preserves webhook setup", async () => {
+test("Telegram setup keeps the default menu non-Web-App and preserves webhook setup", async () => {
   const setup = await readFile(new URL("../api/telegram/setup.ts", import.meta.url), "utf8");
   assert.match(setup, /setWebhook/);
-  assert.match(setup, /setChatMenuButton/);
-  assert.match(setup, /WEB_APP_URL/);
+  assert.match(setup, /setChatMenuButton\(\{ type: "commands" \}\)/);
+  assert.doesNotMatch(setup, /buildWebAppMenuButton/);
 });
 
-test("bot messages automatically ensure the global Web App menu button is configured", async () => {
+test("Telegram menu helpers can disable or enable the Web App per chat", async () => {
   const telegramSource = await readFile(new URL("../src/lib/telegram.ts", import.meta.url), "utf8");
-  assert.match(telegramSource, /ensureDefaultWebAppMenu/);
-  assert.match(telegramSource, /setChatMenuButton/);
-  assert.match(telegramSource, /buildWebAppMenuButton/);
-  assert.match(telegramSource, /WEB_APP_URL/);
+  assert.match(telegramSource, /disableWebAppMenuForChat/);
+  assert.match(telegramSource, /enableWebAppMenuForChat/);
+  assert.match(telegramSource, /chat_id/);
+  assert.doesNotMatch(telegramSource, /ensureDefaultWebAppMenu/);
 });

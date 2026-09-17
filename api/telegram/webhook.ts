@@ -13,7 +13,11 @@ import {
   normalizeRegistrationName,
   upsertHistoryUser,
 } from "../../src/history/user-service.ts";
-import { sendMessage } from "../../src/lib/telegram.ts";
+import {
+  disableWebAppMenuForChat,
+  enableWebAppMenuForChat,
+  sendMessage,
+} from "../../src/lib/telegram.ts";
 
 function isAuthorizedTelegramRequest(req: any): boolean {
   const env = getEnv();
@@ -34,6 +38,7 @@ async function handleRegistrationMessage(message: any): Promise<boolean> {
     const existing = await getHistoryUser(userId);
     if (existing) {
       await setAdminState(userId, "idle");
+      await enableWebAppMenuForChat(chatId);
       await sendMessage(chatId, welcomeText(existing.first_name), {
         parse_mode: "HTML",
         ...welcomeMenu(false),
@@ -41,6 +46,7 @@ async function handleRegistrationMessage(message: any): Promise<boolean> {
       return true;
     }
 
+    await disableWebAppMenuForChat(chatId);
     await setAdminState(userId, "awaiting_first_name");
     await sendMessage(chatId, registrationFirstNameText(), { parse_mode: "HTML" });
     return true;
@@ -80,6 +86,7 @@ async function handleRegistrationMessage(message: any): Promise<boolean> {
         lastName,
       });
       await setAdminState(userId, "idle");
+      await enableWebAppMenuForChat(chatId);
       await sendMessage(chatId, registrationCompleteText(user.first_name, user.last_name), {
         parse_mode: "HTML",
         ...welcomeMenu(false),

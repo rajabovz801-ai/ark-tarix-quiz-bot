@@ -6,7 +6,7 @@ test("Telegram Web App menu button uses the configured HTTPS app URL", async () 
   const { buildWebAppMenuButton } = await import("../src/history/web-app-menu.ts");
   assert.deepEqual(buildWebAppMenuButton("https://tarix-app.vercel.app"), {
     type: "web_app",
-    text: "🚀 Ilovani ochish",
+    text: "🚀 Platformaga kirish",
     web_app: { url: "https://tarix-app.vercel.app" },
   });
   assert.throws(() => buildWebAppMenuButton("http://localhost:3000"), /HTTPS/);

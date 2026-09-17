@@ -7,12 +7,12 @@ test("public welcome shows a visible Web App button and no public/admin menu clu
   const url = "https://ark-tarix-web-app.vercel.app";
 
   assert.match(text, /Xush kelibsiz, <b>Rustam<\/b>/);
-  assert.match(text, /ilova/i);
+  assert.match(text, /platforma/i);
   assert.doesNotMatch(text, /Quyidagi menyudan/);
   assert.deepEqual(welcomeMenu(false, url), {
     reply_markup: {
       inline_keyboard: [[
-        { text: "🚀 Ilovani ochish", web_app: { url } },
+        { text: "🚀 Platformaga kirish", web_app: { url } },
       ]],
     },
   });
@@ -28,9 +28,9 @@ test("welcome button uses configured WEB_APP_URL when webhook calls welcomeMenu 
 
   const { welcomeMenu } = await import("../src/history/ui.ts");
   const markup = welcomeMenu(false);
-  assert.equal(markup.reply_markup.inline_keyboard[0][0].text, "🚀 Ilovani ochish");
+  assert.equal(markup.reply_markup.inline_keyboard[0][0].text, "🚀 Platformaga kirish");
   assert.deepEqual(markup.reply_markup.inline_keyboard[0][0], {
-    text: "🚀 Ilovani ochish",
+    text: "🚀 Platformaga kirish",
     web_app: { url: "https://ark-tarix-web-app.vercel.app" },
   });
 });

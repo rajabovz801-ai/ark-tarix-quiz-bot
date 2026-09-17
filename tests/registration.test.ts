@@ -11,28 +11,32 @@ test("registration migration creates users and registration states", async () =>
   assert.match(sql, /enable row level security/i);
 });
 
-test("registration copy asks first name then last name and confirms app access", async () => {
+test("registration copy uses Rustam and Usmonov as the examples", async () => {
   const { registrationFirstNameText, registrationLastNameText, registrationCompleteText } = await import("../src/history/ui.ts");
-  assert.match(registrationFirstNameText(), /ism/i);
-  assert.match(registrationLastNameText("Zuhriddin"), /familiya/i);
-  assert.match(registrationLastNameText("Zuhriddin"), /Zuhriddin/);
-  assert.match(registrationCompleteText("Zuhriddin", "Rajabov"), /Zuhriddin Rajabov/);
-  assert.match(registrationCompleteText("Zuhriddin", "Rajabov"), /Ilovani ochish/i);
+  assert.match(registrationFirstNameText(), /<code>Rustam<\/code>/);
+  assert.doesNotMatch(registrationFirstNameText(), /Zuhriddin/);
+  assert.match(registrationLastNameText("Rustam"), /familiya/i);
+  assert.match(registrationLastNameText("Rustam"), /<code>Usmonov<\/code>/);
+  assert.doesNotMatch(registrationLastNameText("Rustam"), /Rajabov/);
+  assert.match(registrationCompleteText("Rustam", "Usmonov"), /Rustam Usmonov/);
+  assert.match(registrationCompleteText("Rustam", "Usmonov"), /Ilovani ochish/i);
 });
 
 test("registration names are normalized and validated", async () => {
   const { normalizeRegistrationName } = await import("../src/history/user-service.ts");
-  assert.equal(normalizeRegistrationName("  zuhriddin  "), "Zuhriddin");
+  assert.equal(normalizeRegistrationName("  rustam  "), "Rustam");
   assert.equal(normalizeRegistrationName("O‘TKIR"), "O‘tkir");
   assert.throws(() => normalizeRegistrationName("A"), /kamida 2/i);
   assert.throws(() => normalizeRegistrationName("12345"), /harf/i);
 });
 
-test("private start uses history user registration before app access", async () => {
+test("private start gates the persistent Web App menu until registration completes", async () => {
   const source = await readFile(new URL("../api/telegram/webhook.ts", import.meta.url), "utf8");
   assert.match(source, /getHistoryUser/);
   assert.match(source, /awaiting_first_name/);
   assert.match(source, /awaiting_last_name/);
   assert.match(source, /upsertHistoryUser/);
   assert.match(source, /registrationCompleteText/);
+  assert.match(source, /disableWebAppMenuForChat/);
+  assert.match(source, /enableWebAppMenuForChat/);
 });

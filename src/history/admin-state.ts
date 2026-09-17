@@ -8,7 +8,8 @@ export type AdminState =
   | "choosing_time"
   | "awaiting_admin_id"
   | "awaiting_first_name"
-  | "awaiting_last_name";
+  | "awaiting_last_name"
+  | "awaiting_confirmation";
 
 export async function getAdminState(telegramUserId: number): Promise<{ state: AdminState; payload: Record<string, unknown> }> {
   const rows = await dbSelect<any>("history_bot_state", { telegram_user_id: `eq.${telegramUserId}`, limit: "1" });

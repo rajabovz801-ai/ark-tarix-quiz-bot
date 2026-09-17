@@ -21,7 +21,7 @@ export function registrationFirstNameText(): string {
     "Xush kelibsiz! Ilovaga kirishdan oldin qisqa ro‘yxatdan o‘tamiz.",
     "",
     "<b>Ismingizni yozing:</b>",
-    "Masalan: <code>Zuhriddin</code>",
+    "Masalan: <code>Rustam</code>",
   ].join("\n");
 }
 
@@ -32,7 +32,7 @@ export function registrationLastNameText(firstName: string): string {
     `Ism: <b>${escapeHtml(firstName)}</b>`,
     "",
     "Endi <b>familiyangizni yozing:</b>",
-    "Masalan: <code>Rajabov</code>",
+    "Masalan: <code>Usmonov</code>",
   ].join("\n");
 }
 

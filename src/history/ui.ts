@@ -42,8 +42,7 @@ export function registrationConfirmationText(firstName: string, lastName: string
   return [
     "👤 <b>Ma’lumotlaringizni tekshiring</b>",
     "",
-    `Ism: <b>${escapeHtml(firstName)}</b>`,
-    `Familiya: <b>${escapeHtml(lastName)}</b>`,
+    `<b>${escapeHtml(firstName)} ${escapeHtml(lastName)}</b>`,
     "",
     "Ma’lumotlar to‘g‘rimi?",
   ].join("\n");

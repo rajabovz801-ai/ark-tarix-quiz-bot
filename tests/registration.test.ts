@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 
 test("registration migration creates users and registration states", async () => {
   const sql = await readFile(new URL("../supabase/migrations/20260916_history_web_users.sql", import.meta.url), "utf8");
@@ -34,6 +34,44 @@ test("registration copy uses the polished Ark Education wording and Rustam/Usmon
   assert.match(welcomeText("Rustam"), /Platformaga kirish/);
 });
 
+test("registration asks for confirmation before saving the student", async () => {
+  const ui = await import("../src/history/ui.ts");
+  assert.equal(typeof (ui as any).registrationConfirmationText, "function");
+  assert.equal(typeof (ui as any).registrationConfirmationMenu, "function");
+  if (typeof (ui as any).registrationConfirmationText === "function") {
+    const text = (ui as any).registrationConfirmationText("Rustam", "Usmonov");
+    assert.match(text, /Ma’lumotlaringizni tekshiring/);
+    assert.match(text, /Rustam Usmonov/);
+  }
+  if (typeof (ui as any).registrationConfirmationMenu === "function") {
+    const menu = (ui as any).registrationConfirmationMenu();
+    assert.deepEqual(menu.reply_markup.inline_keyboard, [[
+      { text: "✅ Tasdiqlash", callback_data: "registration:confirm" },
+      { text: "✏️ Tahrirlash", callback_data: "registration:edit" },
+    ]]);
+  }
+
+  const webhook = await readFile(new URL("../api/telegram/webhook.ts", import.meta.url), "utf8");
+  const stateSource = await readFile(new URL("../src/history/admin-state.ts", import.meta.url), "utf8");
+  assert.match(webhook, /awaiting_confirmation/);
+  assert.match(webhook, /registration:confirm/);
+  assert.match(webhook, /registration:edit/);
+  assert.match(stateSource, /awaiting_confirmation/);
+
+  const migrationDir = new URL("../supabase/migrations/", import.meta.url);
+  const migrationNames = await readdir(migrationDir);
+  const migrationText = (await Promise.all(migrationNames.map((name) => readFile(new URL(name, migrationDir), "utf8")))).join("\n");
+  assert.match(migrationText, /awaiting_confirmation/);
+});
+
+test("registration hides technical validation rules behind friendly guidance", async () => {
+  const webhook = await readFile(new URL("../api/telegram/webhook.ts", import.meta.url), "utf8");
+  assert.match(webhook, /Ism noto‘g‘ri kiritildi\. Iltimos, haqiqiy ismingizni yozing\./);
+  assert.match(webhook, /Familiya noto‘g‘ri kiritildi\. Iltimos, haqiqiy familiyangizni yozing\./);
+  assert.doesNotMatch(webhook, /error\?\.message \|\| "Ism noto‘g‘ri/);
+  assert.doesNotMatch(webhook, /error\?\.message \|\| "Familiya noto‘g‘ri/);
+});
+
 test("registration names are normalized and validated", async () => {
   const { normalizeRegistrationName } = await import("../src/history/user-service.ts");
   assert.equal(normalizeRegistrationName("  rustam  "), "Rustam");
@@ -47,6 +85,7 @@ test("private start gates the persistent Web App menu until registration complet
   assert.match(source, /getHistoryUser/);
   assert.match(source, /awaiting_first_name/);
   assert.match(source, /awaiting_last_name/);
+  assert.match(source, /awaiting_confirmation/);
   assert.match(source, /upsertHistoryUser/);
   assert.match(source, /registrationCompleteText/);
   assert.match(source, /disableWebAppMenuForChat/);

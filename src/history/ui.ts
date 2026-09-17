@@ -16,9 +16,11 @@ export function escapeHtml(input: string): string {
 
 export function registrationFirstNameText(): string {
   return [
-    "🏛 <b>ARK TARIX</b>",
+    "🏛 <b>Ark Education | Tarix</b>",
     "",
-    "Xush kelibsiz! Ilovaga kirishdan oldin qisqa ro‘yxatdan o‘tamiz.",
+    "Ark Education’ning Tarix platformasiga xush kelibsiz!",
+    "",
+    "Platformadan foydalanish uchun avval qisqa ro‘yxatdan o‘ting.",
     "",
     "<b>Ismingizni yozing:</b>",
     "Masalan: <code>Rustam</code>",
@@ -27,7 +29,7 @@ export function registrationFirstNameText(): string {
 
 export function registrationLastNameText(firstName: string): string {
   return [
-    "✅ Ism qabul qilindi.",
+    "✅ Ismingiz qabul qilindi.",
     "",
     `Ism: <b>${escapeHtml(firstName)}</b>`,
     "",
@@ -38,25 +40,25 @@ export function registrationLastNameText(firstName: string): string {
 
 export function registrationCompleteText(firstName: string, lastName: string): string {
   return [
-    "✅ <b>RO‘YXATDAN O‘TISH YAKUNLANDI</b>",
+    "✅ <b>Ro‘yxatdan o‘tish muvaffaqiyatli yakunlandi</b>",
     "",
     `👤 ${escapeHtml(firstName)} ${escapeHtml(lastName)}`,
     "",
-    "ARK Tarix platformasiga xush kelibsiz.",
-    "Pastdagi <b>🚀 Ilovani ochish</b> tugmasi orqali kiring.",
+    "Ark Education’ning Tarix platformasiga xush kelibsiz!",
+    "Quyidagi <b>🚀 Platformaga kirish</b> tugmasi orqali davom eting.",
   ].join("\n");
 }
 
 export function welcomeText(firstName?: string | null): string {
   const name = escapeHtml(firstName?.trim() || "do‘st");
   return [
-    "🏛 <b>ARK TARIX QUIZ</b>",
+    "🏛 <b>Ark Education | Tarix</b>",
     "",
     `👋 Xush kelibsiz, <b>${name}</b>!`,
     "",
-    "Tarix bo‘yicha testlar, natijalar va reytingni ilova ichida ko‘rishingiz mumkin.",
+    "Tarix bo‘yicha testlar, natijalar va reytingni platforma ichida ko‘rishingiz mumkin.",
     "",
-    "Pastdagi <b>🚀 Ilovani ochish</b> tugmasi orqali ilovaga kiring 👇",
+    "Quyidagi <b>🚀 Platformaga kirish</b> tugmasi orqali davom eting 👇",
   ].join("\n");
 }
 

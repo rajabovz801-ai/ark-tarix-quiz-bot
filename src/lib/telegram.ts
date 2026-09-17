@@ -24,24 +24,7 @@ export async function telegram<T = any>(method: string, payload: Record<string, 
   return data.result as T;
 }
 
-let defaultMenuSetup: Promise<void> | null = null;
-
-async function ensureDefaultWebAppMenu() {
-  if (!defaultMenuSetup) {
-    defaultMenuSetup = (async () => {
-      const { WEB_APP_URL } = getEnv();
-      if (!WEB_APP_URL) return;
-      await setChatMenuButton(buildWebAppMenuButton(WEB_APP_URL));
-    })().catch((error) => {
-      defaultMenuSetup = null;
-      console.error("web_app_menu_setup_error", error instanceof Error ? error.message : error);
-    });
-  }
-  await defaultMenuSetup;
-}
-
 export async function sendMessage(chatId: number | string, text: string, extra: Record<string, unknown> = {}) {
-  await ensureDefaultWebAppMenu();
   return telegram("sendMessage", { chat_id: chatId, text, ...extra });
 }
 
@@ -83,6 +66,18 @@ export function setWebhook(url: string, secretToken: string) {
   });
 }
 
-export function setChatMenuButton(menuButton: Record<string, unknown>) {
-  return telegram("setChatMenuButton", { menu_button: menuButton });
+export function setChatMenuButton(menuButton: Record<string, unknown>, chatId?: number | string) {
+  return telegram("setChatMenuButton", {
+    ...(chatId ? { chat_id: chatId } : {}),
+    menu_button: menuButton,
+  });
+}
+
+export function disableWebAppMenuForChat(chatId: number | string) {
+  return setChatMenuButton({ type: "commands" }, chatId);
+}
+
+export function enableWebAppMenuForChat(chatId: number | string) {
+  const { WEB_APP_URL } = getEnv();
+  return setChatMenuButton(buildWebAppMenuButton(WEB_APP_URL), chatId);
 }

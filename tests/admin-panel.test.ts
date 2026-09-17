@@ -29,13 +29,13 @@ test("settings normalize defaults and only allow supported quiz times", async ()
 
 test("public welcome stays simple while admin panel remains available through admin flow", async () => {
   const { welcomeText, welcomeMenu, adminPanelMenu } = await import("../src/history/ui.ts");
-  const welcome = welcomeText("Zuhriddin");
+  const welcome = welcomeText("Rustam");
   const url = "https://ark-tarix-web-app.vercel.app";
-  assert.match(welcome, /Xush kelibsiz, <b>Zuhriddin<\/b>/);
-  assert.match(welcome, /ilova/i);
+  assert.match(welcome, /Xush kelibsiz, <b>Rustam<\/b>/);
+  assert.match(welcome, /platforma/i);
   assert.deepEqual(welcomeMenu(false, url), {
     reply_markup: {
-      inline_keyboard: [[{ text: "🚀 Ilovani ochish", web_app: { url } }]],
+      inline_keyboard: [[{ text: "🚀 Platformaga kirish", web_app: { url } }]],
     },
   });
   assert.deepEqual(welcomeMenu(true, url), welcomeMenu(false, url));

@@ -11,7 +11,7 @@ export function buildWebAppMenuButton(webAppUrl: string): WebAppMenuButton {
   }
   return {
     type: "web_app",
-    text: "🚀 Ilovani ochish",
+    text: "🚀 Platformaga kirish",
     web_app: { url: normalized },
   };
 }

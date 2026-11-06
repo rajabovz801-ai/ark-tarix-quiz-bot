@@ -41,7 +41,7 @@ export async function sendSubscriptionOffer(chatId: number, intro: string, expir
     url: "https://t.me/rustam_usmon0v",
   }];
   const demo = [{ text: "Bepul testni ishlash", web_app: { url: getEnv().WEB_APP_URL } }];
-  await sendMessage(chatId, `${intro}\n\n<b>30 kunlik obuna — 35 000 so‘m</b>\nObunani faollashtirish uchun @rustam_usmon0v ga yozing.`, {
+  await sendMessage(chatId, `${intro}\n\n<b>1 oylik obuna — 35 000 so‘m (30 kun)</b>\nObunani faollashtirish uchun @rustam_usmon0v ga yozing.`, {
     parse_mode: "HTML",
     reply_markup: { inline_keyboard: expired ? [payment] : [demo, payment] },
   });
@@ -57,7 +57,7 @@ async function showRequest(chatId: number, userId: number) {
   const name = escapeHtml(`${user.first_name} ${user.last_name}`);
   const buttons = state === "pending" || state === "expired" ? {
     reply_markup: { inline_keyboard: [
-      [{ text: "30 kunlik obunani faollashtirish", callback_data: `sub:paid:${userId}:${version}` }],
+      [{ text: "1 oylik obunani tasdiqlash", callback_data: `sub:paid:${userId}:${version}` }],
       [{ text: "Markaz o‘quvchisiga bepul kirish", callback_data: `sub:center:${userId}:${version}` }],
     ] },
   } : {};

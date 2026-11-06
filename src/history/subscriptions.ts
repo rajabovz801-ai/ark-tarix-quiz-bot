@@ -74,7 +74,10 @@ async function showRequest(chatId: number, userId: number, newRegistration = fal
 }
 
 export async function notifySubscriptionAdmins(userId: number) {
-  await Promise.allSettled([...getEnv().ADMIN_TELEGRAM_IDS].map((id) => showRequest(Number(id), userId, true)));
+  const deliveries = await Promise.allSettled([...getEnv().ADMIN_TELEGRAM_IDS].map((id) => showRequest(Number(id), userId, true)));
+  if (deliveries.some((result) => result.status === "rejected" || !result.value)) {
+    console.error("tarix_registration_notification_delivery_failed");
+  }
 }
 
 const backButton = { text: "⬅️ Admin menyusi", callback_data: "sub:menu" };

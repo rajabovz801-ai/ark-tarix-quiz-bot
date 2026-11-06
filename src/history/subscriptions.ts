@@ -12,6 +12,7 @@ type Subscription = {
   telegram_user_id: number;
   status: "pending" | "paid" | "center";
   expires_at: string | null;
+  requested_at?: string;
 };
 
 export function subscriptionState(row: Subscription, now = Date.now()) {
@@ -59,8 +60,12 @@ async function showRequest(chatId: number, userId: number, newRegistration = fal
       [{ text: "🎓 Markaz o‘quvchisi · bepul", callback_data: `sub:center:${userId}:${version}` }],
   ] : [];
   const buttons = { reply_markup: { inline_keyboard: [...approval, [{ text: "🗑 O‘quvchini o‘chirish", callback_data: `sub:remove:${userId}` }]] } };
+  const formatDate = (value?: string | null) => value && Number.isFinite(Date.parse(value))
+    ? new Intl.DateTimeFormat("uz-UZ", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Tashkent" }).format(new Date(value))
+    : "—";
+  const expiry = state === "center" ? "Muddatsiz" : formatDate(row?.expires_at);
   const labels = { pending: "Tasdiq kutilmoqda", expired: "Obuna tugagan", paid: "Obuna faol", center: "Markaz o‘quvchisi" };
-  await sendMessage(chatId, `${newRegistration ? "👤 <b>Yangi ro‘yxatdan o‘tish</b>" : "📋 <b>Foydalanuvchi obunasi</b>"}\n\n<b>Ism-familiya:</b> ${name}\n<b>Telegram ID:</b> <code>${userId}</code>\n<b>Holat:</b> ${newRegistration && state === "pending" ? "Tasdiq kutilmoqda" : labels[state]}`, {
+  await sendMessage(chatId, `${newRegistration ? "👤 <b>Yangi ro‘yxatdan o‘tish</b>" : "📋 <b>Foydalanuvchi obunasi</b>"}\n\n<b>Ism-familiya:</b> ${name}\n<b>Telegram ID:</b> <code>${userId}</code>\n📅 <b>Ro‘yxatdan o‘tgan:</b> ${formatDate(user.registered_at)}\n📥 <b>Ariza vaqti:</b> ${formatDate(row?.requested_at)}\n⏳ <b>Obuna tugashi:</b> ${expiry}\n<b>Holat:</b> ${newRegistration && state === "pending" ? "Tasdiq kutilmoqda" : labels[state]}`, {
     parse_mode: "HTML",
     ...buttons,
   });

@@ -40,10 +40,10 @@ export async function sendSubscriptionOffer(chatId: number, intro: string, expir
     text: expired ? "Obunani yangilash" : "To‘lov uchun yozish",
     url: "https://t.me/rustam_usmon0v",
   }];
-  const demo = [{ text: "Bepul testni ishlash", web_app: { url: getEnv().WEB_APP_URL } }];
-  await sendMessage(chatId, `${intro}\n\n<b>1 oylik obuna — 35 000 so‘m (30 kun)</b>\nObunani faollashtirish uchun @rustam_usmon0v ga yozing.`, {
+  const platform = [{ text: "🏛 Platformaga kirish", web_app: { url: getEnv().WEB_APP_URL } }];
+  await sendMessage(chatId, `🏛 <b>Ark Education | Tarix</b>\n\n${intro}\n\n${expired ? "🔒 Obunangizni yangilashingiz mumkin." : "⏳ Testlarga kirish super admin tasdig‘idan keyin ochiladi."}\n\n💳 <b>1 oylik obuna — 35 000 so‘m</b>\nBog‘lanish: @rustam_usmon0v`, {
     parse_mode: "HTML",
-    reply_markup: { inline_keyboard: expired ? [payment] : [demo, payment] },
+    reply_markup: { inline_keyboard: expired ? [payment] : [platform, payment] },
   });
 }
 
@@ -55,14 +55,13 @@ async function showRequest(chatId: number, userId: number, newRegistration = fal
   const state = row ? subscriptionState(row) : "pending";
   const version = row?.expires_at ? Date.parse(row.expires_at) : 0;
   const name = escapeHtml(`${user.first_name} ${user.last_name}`);
-  const buttons = state === "pending" || state === "expired" ? {
-    reply_markup: { inline_keyboard: [
-      [{ text: "1 oylik obunani tasdiqlash", callback_data: `sub:paid:${userId}:${version}` }],
-      [{ text: "Markaz o‘quvchisiga bepul kirish", callback_data: `sub:center:${userId}:${version}` }],
-    ] },
-  } : {};
+  const approval = state === "pending" || state === "expired" ? [
+      [{ text: "💳 1 oylik obunani tasdiqlash", callback_data: `sub:paid:${userId}:${version}` }],
+      [{ text: "🎓 Markaz o‘quvchisi · bepul", callback_data: `sub:center:${userId}:${version}` }],
+  ] : [];
+  const buttons = { reply_markup: { inline_keyboard: [...approval, [{ text: "🗑 O‘quvchini o‘chirish", callback_data: `sub:remove:${userId}` }]] } };
   const labels = { pending: "Tasdiq kutilmoqda", expired: "Obuna tugagan", paid: "Obuna faol", center: "Markaz o‘quvchisi" };
-  await sendMessage(chatId, `${newRegistration ? "👤 <b>Yangi ro‘yxatdan o‘tish</b>" : "📋 <b>Foydalanuvchi obunasi</b>"}\n\n<b>Ism-familiya:</b> ${name}\n<b>Telegram ID:</b> <code>${userId}</code>\n<b>Holat:</b> ${newRegistration && state === "pending" ? "Bepul sinov" : labels[state]}`, {
+  await sendMessage(chatId, `${newRegistration ? "👤 <b>Yangi ro‘yxatdan o‘tish</b>" : "📋 <b>Foydalanuvchi obunasi</b>"}\n\n<b>Ism-familiya:</b> ${name}\n<b>Telegram ID:</b> <code>${userId}</code>\n<b>Holat:</b> ${newRegistration && state === "pending" ? "Tasdiq kutilmoqda" : labels[state]}`, {
     parse_mode: "HTML",
     ...buttons,
   });
@@ -82,10 +81,10 @@ export async function handleSubscriptionAdmin(update: any, isCallback: boolean) 
   const command = /^\/admin(?:\s+(\d+))?$/.exec(input);
   if (isCallback ? !input.startsWith("sub:") : !command) return false;
 
-  const { isAdmin } = await getAdminAccess(userId, getEnv().ADMIN_TELEGRAM_IDS);
-  if (!isAdmin) {
-    if (isCallback) await answerCallbackQuery(update.id, "Bu amal faqat adminlar uchun.");
-    else await sendMessage(chat.id, "Bu bo‘lim faqat adminlar uchun.");
+  const { isSuperAdmin } = await getAdminAccess(userId, getEnv().ADMIN_TELEGRAM_IDS);
+  if (!isSuperAdmin) {
+    if (isCallback) await answerCallbackQuery(update.id, "Bu amal faqat super adminlar uchun.");
+    else await sendMessage(chat.id, "Bu bo‘lim faqat super adminlar uchun.");
     return true;
   }
 
@@ -99,6 +98,30 @@ export async function handleSubscriptionAdmin(update: any, isCallback: boolean) 
       ? "Obunalar · Tasdiq kutayotgan arizalar\nFoydalanuvchini ID bo‘yicha ochish: /admin TELEGRAM_ID"
       : "Hozircha yangi ariza yo‘q.\nFoydalanuvchini ID bo‘yicha ochish: /admin TELEGRAM_ID");
     for (const row of rows) await showRequest(chat.id, row.telegram_user_id);
+    return true;
+  }
+
+  const removal = /^sub:(remove|confirm-remove):(\d+)$/.exec(input);
+  if (removal) {
+    const target = Number(removal[2]);
+    const profile = Number.isSafeInteger(target) ? await getHistoryUser(target) : null;
+    if (!profile || (await getAdminAccess(target, getEnv().ADMIN_TELEGRAM_IDS)).isAdmin) {
+      await answerCallbackQuery(update.id, "Bu profilni o‘chirib bo‘lmaydi.");
+      return true;
+    }
+    await answerCallbackQuery(update.id, removal[1] === "remove" ? "Tasdiqlash kerak." : "So‘rov qabul qilindi.");
+    if (removal[1] === "remove") {
+      await sendMessage(chat.id, `🗑 <b>${escapeHtml(profile.first_name + " " + profile.last_name)}</b> profilini nofaol qilasizmi?`, {
+        parse_mode: "HTML",
+        reply_markup: { inline_keyboard: [[{ text: "O‘chirishni tasdiqlash", callback_data: `sub:confirm-remove:${target}` }]] },
+      });
+      return true;
+    }
+    await requestSubscription(target);
+    await dbUpdate(table, { telegram_user_id: `eq.${target}` }, { status: "pending", expires_at: null, approved_by: null });
+    await dbUpdate("history_users", { telegram_user_id: `eq.${target}` }, { is_active: false });
+    await disableWebAppMenuForChat(target).catch(() => undefined);
+    await sendMessage(chat.id, "✅ O‘quvchi profili nofaol qilindi va kirish ruxsati bekor qilindi.");
     return true;
   }
 

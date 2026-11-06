@@ -40,10 +40,9 @@ export async function sendSubscriptionOffer(chatId: number, intro: string, expir
     text: expired ? "Obunani yangilash" : "To‘lov uchun yozish",
     url: "https://t.me/rustam_usmon0v",
   }];
-  const platform = [{ text: "🏛 Platformaga kirish", web_app: { url: getEnv().WEB_APP_URL } }];
   await sendMessage(chatId, `🏛 <b>Ark Education | Tarix</b>\n\n${intro}\n\n${expired ? "🔒 Obunangizni yangilashingiz mumkin." : "⏳ Testlarga kirish super admin tasdig‘idan keyin ochiladi."}\n\n💳 <b>1 oylik obuna — 35 000 so‘m</b>\nBog‘lanish: @rustam_usmon0v`, {
     parse_mode: "HTML",
-    reply_markup: { inline_keyboard: expired ? [payment] : [platform, payment] },
+    reply_markup: { inline_keyboard: [payment] },
   });
 }
 

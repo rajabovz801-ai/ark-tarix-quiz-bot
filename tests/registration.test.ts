@@ -80,14 +80,15 @@ test("registration names are normalized and validated", async () => {
   assert.throws(() => normalizeRegistrationName("12345"), /harf/i);
 });
 
-test("private start gates the persistent Web App menu until registration completes", async () => {
+test("private start gates the persistent Web App menu until subscription access is granted", async () => {
   const source = await readFile(new URL("../api/telegram/webhook.ts", import.meta.url), "utf8");
   assert.match(source, /getHistoryUser/);
   assert.match(source, /awaiting_first_name/);
   assert.match(source, /awaiting_last_name/);
   assert.match(source, /awaiting_confirmation/);
   assert.match(source, /upsertHistoryUser/);
-  assert.match(source, /registrationCompleteText/);
+  assert.match(source, /requestSubscription/);
+  assert.match(source, /sendSubscriptionOffer/);
   assert.match(source, /disableWebAppMenuForChat/);
   assert.match(source, /enableWebAppMenuForChat/);
 });

@@ -2,7 +2,6 @@ import legacyHandler from "./legacy-webhook.ts";
 import { getEnv } from "../../src/config/env.ts";
 import { getAdminState, setAdminState } from "../../src/history/admin-state.ts";
 import {
-  registrationCompleteText,
   registrationConfirmationMenu,
   registrationConfirmationText,
   registrationFirstNameText,
@@ -21,6 +20,15 @@ import {
   enableWebAppMenuForChat,
   sendMessage,
 } from "../../src/lib/telegram.ts";
+
+import {
+  getSubscription,
+  handleSubscriptionAdmin,
+  notifySubscriptionAdmins,
+  requestSubscription,
+  sendSubscriptionOffer,
+  subscriptionState,
+} from "../../src/history/subscriptions.ts";
 
 function isAuthorizedTelegramRequest(req: any): boolean {
   const env = getEnv();
@@ -41,6 +49,14 @@ async function handleRegistrationMessage(message: any): Promise<boolean> {
     const existing = await getHistoryUser(userId);
     if (existing) {
       await setAdminState(userId, "idle");
+      const subscription = await getSubscription(userId);
+      const access = subscription && subscriptionState(subscription);
+      if (access === "pending" || access === "expired") {
+        await sendSubscriptionOffer(chatId, access === "expired"
+          ? "Obunangiz muddati tugadi."
+          : "Ro‘yxatdan o‘tish arizangiz qabul qilindi.", access === "expired");
+        return true;
+      }
       await enableWebAppMenuForChat(chatId);
       await sendMessage(chatId, welcomeText(existing.first_name), {
         parse_mode: "HTML",
@@ -127,7 +143,8 @@ async function handleRegistrationCallback(callback: any): Promise<boolean> {
     return true;
   }
 
-  const user = await upsertHistoryUser({
+  const isNewRequest = await requestSubscription(userId);
+  await upsertHistoryUser({
     telegramUserId: userId,
     telegramUsername: callback.from?.username || null,
     telegramFirstName: callback.from?.first_name || null,
@@ -136,12 +153,9 @@ async function handleRegistrationCallback(callback: any): Promise<boolean> {
     lastName,
   });
   await setAdminState(userId, "idle");
-  await enableWebAppMenuForChat(chatId);
   await answerCallbackQuery(callback.id, "Tasdiqlandi ✅");
-  await sendMessage(chatId, registrationCompleteText(user.first_name, user.last_name), {
-    parse_mode: "HTML",
-    ...welcomeMenu(false),
-  });
+  await sendSubscriptionOffer(chatId, "Ro‘yxatdan o‘tish arizangiz qabul qilindi.");
+  if (isNewRequest) await notifySubscriptionAdmins(userId);
   return true;
 }
 
@@ -152,12 +166,14 @@ export default async function handler(req: any, res: any) {
     const update = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
     if (update?.message) {
       if (!isAuthorizedTelegramRequest(req)) return res.status(401).json({ ok: false });
-      const handled = await handleRegistrationMessage(update.message);
+      const handled = await handleSubscriptionAdmin(update.message, false)
+        || await handleRegistrationMessage(update.message);
       if (handled) return res.status(200).json({ ok: true, registration: true });
     }
     if (update?.callback_query) {
       if (!isAuthorizedTelegramRequest(req)) return res.status(401).json({ ok: false });
-      const handled = await handleRegistrationCallback(update.callback_query);
+      const handled = await handleSubscriptionAdmin(update.callback_query, true)
+        || await handleRegistrationCallback(update.callback_query);
       if (handled) return res.status(200).json({ ok: true, registration: true });
     }
     return legacyHandler(req, res);

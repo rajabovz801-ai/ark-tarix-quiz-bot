@@ -1,9 +1,10 @@
 import { getEnv } from "../config/env.ts";
 import { DatabaseError, dbInsert, dbSelect, dbUpdate } from "../lib/supabase.ts";
 import { answerCallbackQuery, disableWebAppMenuForChat, enableWebAppMenuForChat, sendMessage } from "../lib/telegram.ts";
+import { getAdminState, setAdminState } from "./admin-state.ts";
 import { getAdminAccess } from "./admin-service.ts";
 import { escapeHtml, welcomeMenu } from "./ui.ts";
-import { getHistoryUser } from "./user-service.ts";
+import { getHistoryUser, type HistoryUser } from "./user-service.ts";
 
 const table = "history_bot_subscriptions";
 const duration = 30 * 24 * 60 * 60 * 1000;
@@ -59,7 +60,7 @@ async function showRequest(chatId: number, userId: number, newRegistration = fal
       [{ text: "💳 1 oylik obunani tasdiqlash", callback_data: `sub:paid:${userId}:${version}` }],
       [{ text: "🎓 Markaz o‘quvchisi · bepul", callback_data: `sub:center:${userId}:${version}` }],
   ] : [];
-  const buttons = { reply_markup: { inline_keyboard: [...approval, [{ text: "🗑 O‘quvchini o‘chirish", callback_data: `sub:remove:${userId}` }]] } };
+  const buttons = { reply_markup: { inline_keyboard: [...approval, [{ text: "🗑 O‘quvchini o‘chirish", callback_data: `sub:remove:${userId}` }], [{ text: "⬅️ Admin menyusi", callback_data: "sub:menu" }]] } };
   const formatDate = (value?: string | null) => value && Number.isFinite(Date.parse(value))
     ? new Intl.DateTimeFormat("uz-UZ", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Tashkent" }).format(new Date(value))
     : "—";
@@ -76,6 +77,45 @@ export async function notifySubscriptionAdmins(userId: number) {
   await Promise.allSettled([...getEnv().ADMIN_TELEGRAM_IDS].map((id) => showRequest(Number(id), userId, true)));
 }
 
+const backButton = { text: "⬅️ Admin menyusi", callback_data: "sub:menu" };
+
+async function showAdminMenu(chatId: number) {
+  await sendMessage(chatId, "🛠 <b>Tarix · Super admin</b>\n\nArizalar, obunalar va o‘quvchi profillarini boshqaring.", {
+    parse_mode: "HTML",
+    reply_markup: { inline_keyboard: [
+      [{ text: "📥 Yangi arizalar", callback_data: "sub:list:pending:0" }],
+      [{ text: "💳 Faol obunalar", callback_data: "sub:list:paid:0" }, { text: "⏳ 7 kunda tugaydi", callback_data: "sub:list:soon:0" }],
+      [{ text: "🎓 Markaz o‘quvchilari", callback_data: "sub:list:center:0" }],
+      [{ text: "🔎 Foydalanuvchini qidirish", callback_data: "sub:search" }],
+    ] },
+  });
+}
+
+async function showSearchResults(chatId: number, input: string) {
+  const words = input.replace(/^@/, "").match(/[\p{L}\p{N}_’'-]+/gu) ?? [];
+  const filters: Record<string, string> = { is_active: "eq.true", limit: "10", order: "first_name.asc,last_name.asc" };
+  if (/^\d+$/.test(input) && Number.isSafeInteger(Number(input))) {
+    filters.telegram_user_id = `eq.${input}`;
+  } else if (words.length >= 2) {
+    filters.first_name = `ilike.*${words[0]}*`;
+    filters.last_name = `ilike.*${words.slice(1).join(" ")}*`;
+  } else if (words[0]) {
+    const term = words[0];
+    filters.or = `(first_name.ilike.*${term}*,last_name.ilike.*${term}*,telegram_username.ilike.*${term}*)`;
+  } else {
+    await sendMessage(chatId, "Qidiruv uchun ism, @username yoki Telegram ID yozing.", { reply_markup: { inline_keyboard: [[backButton]] } });
+    return;
+  }
+  const users = await dbSelect<HistoryUser>("history_users", filters);
+  await sendMessage(chatId, users.length ? "🔎 <b>Qidiruv natijalari</b>\nProfilni tanlang." : "🔎 Foydalanuvchi topilmadi.", {
+    parse_mode: "HTML",
+    reply_markup: { inline_keyboard: [
+      ...users.map((user) => [{ text: `${user.first_name} ${user.last_name} · ${user.telegram_user_id}`, callback_data: `sub:profile:${user.telegram_user_id}` }]),
+      [{ text: "🔎 Qayta qidirish", callback_data: "sub:search" }, backButton],
+    ] },
+  });
+}
+
 export async function handleSubscriptionAdmin(update: any, isCallback: boolean) {
   const chat = isCallback ? update?.message?.chat : update?.chat;
   if (chat?.type !== "private") return false;
@@ -83,7 +123,10 @@ export async function handleSubscriptionAdmin(update: any, isCallback: boolean) 
   const userId = Number(update?.from?.id);
   const input = String(isCallback ? update?.data : update?.text ?? "").trim();
   const command = /^\/admin(?:\s+(\d+))?$/.exec(input);
-  if (isCallback ? !input.startsWith("sub:") : !command) return false;
+  const isSearchReply = !isCallback && !!input && !input.startsWith("/")
+    && getEnv().ADMIN_TELEGRAM_IDS.has(String(userId))
+    && (await getAdminState(userId)).payload.subscriptionSearch === true;
+  if (isCallback ? !input.startsWith("sub:") : !command && !isSearchReply) return false;
 
   const { isSuperAdmin } = await getAdminAccess(userId, getEnv().ADMIN_TELEGRAM_IDS);
   if (!isSuperAdmin) {
@@ -93,15 +136,55 @@ export async function handleSubscriptionAdmin(update: any, isCallback: boolean) 
   }
 
   if (!isCallback) {
-    if (command?.[1]) {
+    await setAdminState(userId, "idle");
+    if (isSearchReply) await showSearchResults(chat.id, input);
+    else if (command?.[1]) {
       if (!await showRequest(chat.id, Number(command[1]))) await sendMessage(chat.id, "Foydalanuvchi topilmadi.");
-      return true;
-    }
-    const rows = await dbSelect<Subscription>(table, { status: "eq.pending", order: "requested_at.asc", limit: "10" });
-    await sendMessage(chat.id, rows.length
-      ? "Obunalar · Tasdiq kutayotgan arizalar\nFoydalanuvchini ID bo‘yicha ochish: /admin TELEGRAM_ID"
-      : "Hozircha yangi ariza yo‘q.\nFoydalanuvchini ID bo‘yicha ochish: /admin TELEGRAM_ID");
-    for (const row of rows) await showRequest(chat.id, row.telegram_user_id);
+    } else await showAdminMenu(chat.id);
+    return true;
+  }
+
+  if (input === "sub:menu" || input === "sub:search") {
+    await answerCallbackQuery(update.id, "");
+    await setAdminState(userId, "idle", input === "sub:search" ? { subscriptionSearch: true } : {});
+    if (input === "sub:menu") await showAdminMenu(chat.id);
+    else await sendMessage(chat.id, "🔎 Ism-familiya, @username yoki Telegram ID yuboring.", {
+      reply_markup: { inline_keyboard: [[{ ...backButton, text: "Bekor qilish" }]] },
+    });
+    return true;
+  }
+  const profile = /^sub:profile:(\d+)$/.exec(input);
+  if (profile) {
+    await answerCallbackQuery(update.id, "");
+    if (!await showRequest(chat.id, Number(profile[1]))) await sendMessage(chat.id, "Foydalanuvchi topilmadi.");
+    return true;
+  }
+  const list = /^sub:list:(pending|paid|soon|center):(\d+)$/.exec(input);
+  if (list) {
+    await answerCallbackQuery(update.id, "");
+    const [, section, page] = list;
+    const offset = Number(page);
+    const now = new Date();
+    const expires = section === "soon"
+      ? { and: `(expires_at.gt.${now.toISOString()},expires_at.lte.${new Date(now.getTime() + 7 * 86400000).toISOString()})` }
+      : section === "paid" ? { expires_at: `gt.${now.toISOString()}` } : {};
+    const rows = await dbSelect<Subscription>(table, {
+      status: `eq.${section === "soon" ? "paid" : section}`,
+      order: section === "paid" || section === "soon" ? "expires_at.asc,telegram_user_id.asc" : "requested_at.asc,telegram_user_id.asc",
+      offset: String(offset), limit: "6", ...expires,
+    });
+    const labels: Record<string, string> = { pending: "📥 Yangi arizalar", paid: "💳 Faol obunalar", soon: "⏳ 7 kunda tugaydigan obunalar", center: "🎓 Markaz o‘quvchilari" };
+    const cards = await Promise.all(rows.slice(0, 5).map((row) => getHistoryUser(row.telegram_user_id)));
+    const visible = cards.filter((user): user is HistoryUser => !!user);
+    await sendMessage(chat.id, `<b>${labels[section]}</b>\n\n${visible.length ? "Profilni tanlang." : "Bu sahifada faol profil yo‘q."}`, {
+      parse_mode: "HTML",
+      reply_markup: { inline_keyboard: [
+        ...visible.map((user) => [{ text: `${user.first_name} ${user.last_name}`, callback_data: `sub:profile:${user.telegram_user_id}` }]),
+        ...(offset > 0 ? [[{ text: "⬅️ Oldingi", callback_data: `sub:list:${section}:${Math.max(0, offset - 5)}` }]] : []),
+        ...(rows.length > 5 ? [[{ text: "Keyingi ➡️", callback_data: `sub:list:${section}:${offset + 5}` }]] : []),
+        [backButton],
+      ] },
+    });
     return true;
   }
 

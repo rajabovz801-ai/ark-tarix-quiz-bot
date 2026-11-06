@@ -54,7 +54,7 @@ async function handleRegistrationMessage(message: any): Promise<boolean> {
       if (access === "pending" || access === "expired") {
         await sendSubscriptionOffer(chatId, access === "expired"
           ? "Obunangiz muddati tugadi."
-          : "Ro‘yxatdan muvaffaqiyatli o‘tdingiz! Bepul testlarni Web App orqali oching.", access === "expired");
+          : "✅ Ro‘yxatdan muvaffaqiyatli o‘tdingiz! Arizangiz super adminga yuborildi.", access === "expired");
         return true;
       }
       await enableWebAppMenuForChat(chatId);
@@ -154,7 +154,7 @@ async function handleRegistrationCallback(callback: any): Promise<boolean> {
   });
   await setAdminState(userId, "idle");
   await answerCallbackQuery(callback.id, "Tasdiqlandi ✅");
-  await sendSubscriptionOffer(chatId, "Ro‘yxatdan muvaffaqiyatli o‘tdingiz! Bepul testlarni Web App orqali oching.");
+  await sendSubscriptionOffer(chatId, "✅ Ro‘yxatdan muvaffaqiyatli o‘tdingiz! Arizangiz super adminga yuborildi.");
   if (isNewRequest) await notifySubscriptionAdmins(userId);
   return true;
 }

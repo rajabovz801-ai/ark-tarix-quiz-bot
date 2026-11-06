@@ -47,7 +47,7 @@ export async function sendSubscriptionOffer(chatId: number, intro: string, expir
   });
 }
 
-async function showRequest(chatId: number, userId: number) {
+async function showRequest(chatId: number, userId: number, newRegistration = false) {
   const user = await getHistoryUser(userId);
   if (!user) return false;
 
@@ -62,7 +62,7 @@ async function showRequest(chatId: number, userId: number) {
     ] },
   } : {};
   const labels = { pending: "Tasdiq kutilmoqda", expired: "Obuna tugagan", paid: "Obuna faol", center: "Markaz o‘quvchisi" };
-  await sendMessage(chatId, `<b>${name}</b>\nTelegram ID: <code>${userId}</code>\n${labels[state]}`, {
+  await sendMessage(chatId, `${newRegistration ? "👤 <b>Yangi ro‘yxatdan o‘tish</b>" : "📋 <b>Foydalanuvchi obunasi</b>"}\n\n<b>Ism-familiya:</b> ${name}\n<b>Telegram ID:</b> <code>${userId}</code>\n<b>Holat:</b> ${newRegistration && state === "pending" ? "Bepul sinov" : labels[state]}`, {
     parse_mode: "HTML",
     ...buttons,
   });
@@ -70,7 +70,7 @@ async function showRequest(chatId: number, userId: number) {
 }
 
 export async function notifySubscriptionAdmins(userId: number) {
-  await Promise.allSettled([...getEnv().ADMIN_TELEGRAM_IDS].map((id) => showRequest(Number(id), userId)));
+  await Promise.allSettled([...getEnv().ADMIN_TELEGRAM_IDS].map((id) => showRequest(Number(id), userId, true)));
 }
 
 export async function handleSubscriptionAdmin(update: any, isCallback: boolean) {

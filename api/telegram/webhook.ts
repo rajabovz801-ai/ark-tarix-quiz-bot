@@ -143,7 +143,8 @@ async function handleRegistrationCallback(callback: any): Promise<boolean> {
     return true;
   }
 
-  const isNewRequest = await requestSubscription(userId);
+  await requestSubscription(userId);
+  const subscription = await getSubscription(userId);
   await upsertHistoryUser({
     telegramUserId: userId,
     telegramUsername: callback.from?.username || null,
@@ -155,7 +156,7 @@ async function handleRegistrationCallback(callback: any): Promise<boolean> {
   await setAdminState(userId, "idle");
   await answerCallbackQuery(callback.id, "Tasdiqlandi ✅");
   await sendSubscriptionOffer(chatId, "✅ Ro‘yxatdan muvaffaqiyatli o‘tdingiz! Arizangiz super adminga yuborildi.");
-  if (isNewRequest) await notifySubscriptionAdmins(userId);
+  if (subscription?.status === "pending") await notifySubscriptionAdmins(userId);
   return true;
 }
 

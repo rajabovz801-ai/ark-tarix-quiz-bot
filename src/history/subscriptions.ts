@@ -66,7 +66,20 @@ async function showRequest(chatId: number, userId: number, newRegistration = fal
     : "—";
   const expiry = state === "center" ? "Muddatsiz" : formatDate(row?.expires_at);
   const labels = { pending: "Tasdiq kutilmoqda", expired: "Obuna tugagan", paid: "Obuna faol", center: "Markaz o‘quvchisi" };
-  await sendMessage(chatId, `${newRegistration ? "👤 <b>Yangi ro‘yxatdan o‘tish</b>" : "📋 <b>Foydalanuvchi obunasi</b>"}\n\n<b>Ism-familiya:</b> ${name}\n<b>Telegram ID:</b> <code>${userId}</code>\n📅 <b>Ro‘yxatdan o‘tgan:</b> ${formatDate(user.registered_at)}\n📥 <b>Ariza vaqti:</b> ${formatDate(row?.requested_at)}\n⏳ <b>Obuna tugashi:</b> ${expiry}\n<b>Holat:</b> ${newRegistration && state === "pending" ? "Tasdiq kutilmoqda" : labels[state]}`, {
+  const heading = newRegistration ? "📥 <b>Yangi a’zo arizasi</b>" : "📋 <b>Foydalanuvchi profili</b>";
+  const details = [
+    "🏛 <b>Ark Education | Tarix</b>",
+    heading,
+    "",
+    `👤 <b>${name}</b>`,
+    `🆔 Telegram ID · <code>${userId}</code>`,
+    `📅 Ro‘yxatdan o‘tgan · ${formatDate(user.registered_at)}`,
+    `🕒 Ariza vaqti · ${formatDate(row?.requested_at)}`,
+    `🔐 Holat · <b>${labels[state]}</b>`,
+    ...(state === "pending" ? [] : [`⏳ Obuna tugashi · ${expiry}`]),
+    ...(newRegistration && state === "pending" ? ["", "Kirish turini quyidagi tugmalardan tanlang."] : []),
+  ];
+  await sendMessage(chatId, details.join("\n"), {
     parse_mode: "HTML",
     ...buttons,
   });

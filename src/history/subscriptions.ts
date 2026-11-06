@@ -36,12 +36,14 @@ export async function requestSubscription(userId: number) {
 
 export async function sendSubscriptionOffer(chatId: number, intro: string, expired = false) {
   await disableWebAppMenuForChat(chatId);
+  const payment = [{
+    text: expired ? "Obunani yangilash" : "To‘lov uchun yozish",
+    url: "https://t.me/rustam_usmon0v",
+  }];
+  const demo = [{ text: "Bepul testni ishlash", web_app: { url: getEnv().WEB_APP_URL } }];
   await sendMessage(chatId, `${intro}\n\n<b>30 kunlik obuna — 35 000 so‘m</b>\nObunani faollashtirish uchun @rustam_usmon0v ga yozing.`, {
     parse_mode: "HTML",
-    reply_markup: { inline_keyboard: [[{
-      text: expired ? "Obunani yangilash" : "To‘lov uchun yozish",
-      url: "https://t.me/rustam_usmon0v",
-    }]] },
+    reply_markup: { inline_keyboard: expired ? [payment] : [demo, payment] },
   });
 }
 
